@@ -35,7 +35,7 @@ services:
       - minio_data:/data
 
   postgres:
-    restart: on-failure
+    restart: always
     image: pgvector/pgvector:pg15
     environment:
       - POSTGRES_USER=${POSTGRES_USER:-postgres}
