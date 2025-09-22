@@ -1,0 +1,67 @@
+# AppFlowy Admin Initializer Service
+# Adicione este serviço ao seu docker-compose.yml
+
+  admin-init:
+    image: postgres:15-alpine
+    depends_on:
+      - postgres
+      - appflowy_cloud
+    volumes:
+      - ./init-admin.sh:/init-admin.sh:ro
+    entrypoint: |
+      sh -c "
+        echo '🚀 Aguardando serviços ficarem prontos...'
+        sleep 30
+        
+        # Verifica se admin já existe
+        ADMIN_COUNT=$$(PGPASSWORD=0c24791672e502b068e0cf682bcc5fb1 psql -h postgres -U postgres -d postgres -t -c \"SELECT COUNT(*) FROM af_user WHERE email = 'julianolanzi@hotmail.com';\" | tr -d ' ')
+        
+        if [ \"$$ADMIN_COUNT\" = \"0\" ]; then
+          echo '👤 Criando usuário admin...'
+          
+          # Cria UUID para o admin
+          ADMIN_UUID=$$(PGPASSWORD=0c24791672e502b068e0cf682bcc5fb1 psql -h postgres -U postgres -d postgres -t -c \"SELECT gen_random_uuid();\" | tr -d ' ')
+          
+          # Cria no GoTrue
+          PGPASSWORD=0c24791672e502b068e0cf682bcc5fb1 psql -h postgres -U postgres -d postgres -c \"
+            INSERT INTO auth.users (
+              instance_id, id, aud, role, email, encrypted_password, 
+              email_confirmed_at, created_at, updated_at, confirmation_token,
+              email_change, email_change_token_new, recovery_token
+            ) VALUES (
+              '00000000-0000-0000-0000-000000000000', '$$ADMIN_UUID', 'authenticated', 'authenticated',
+              'julianolanzi@hotmail.com', '\\$$2a\\$$10\\$$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',
+              NOW(), NOW(), NOW(), '', '', '', ''
+            ) ON CONFLICT (email) DO NOTHING;\"
+          
+          # Cria no AppFlowy
+          PGPASSWORD=0c24791672e502b068e0cf682bcc5fb1 psql -h postgres -U postgres -d postgres -c \"
+            INSERT INTO af_user (uid, uuid, email, password, name, metadata, created_at, updated_at)
+            VALUES (1, '$$ADMIN_UUID', 'julianolanzi@hotmail.com', '', 'Juliano Lanzi', '{}', NOW(), NOW())
+            ON CONFLICT (email) DO NOTHING;\"
+          
+          # Cria workspace
+          WORKSPACE_ID=$$(PGPASSWORD=0c24791672e502b068e0cf682bcc5fb1 psql -h postgres -U postgres -d postgres -t -c \"
+            INSERT INTO af_workspace (workspace_id, database_storage_id, owner_uid, created_at, workspace_type, workspace_name, icon)
+            VALUES (gen_random_uuid(), gen_random_uuid(), 1, NOW(), 0, 'Admin Workspace', '')
+            ON CONFLICT DO NOTHING RETURNING workspace_id;\" | tr -d ' ')
+          
+          # Adiciona como membro
+          PGPASSWORD=0c24791672e502b068e0cf682bcc5fb1 psql -h postgres -U postgres -d postgres -c \"
+            INSERT INTO af_workspace_member (uid, workspace_id, role_id, created_at, updated_at)
+            VALUES (1, '$$WORKSPACE_ID', 1, NOW(), NOW()) ON CONFLICT DO NOTHING;\"
+          
+          # Adiciona às visualizações recentes
+          PGPASSWORD=0c24791672e502b068e0cf682bcc5fb1 psql -h postgres -U postgres -d postgres -c \"
+            INSERT INTO af_recent_views (uid, workspace_id, object_id, viewed_at)
+            VALUES (1, '$$WORKSPACE_ID', '$$WORKSPACE_ID', NOW()) ON CONFLICT DO NOTHING;\"
+          
+          echo '✅ Admin criado: julianolanzi@hotmail.com / lanzi'
+        else
+          echo '✅ Admin já existe!'
+        fi
+        
+        echo '🎉 Inicialização concluída!'
+        exit 0
+      "
+    restart: "no"
