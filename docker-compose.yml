@@ -9,6 +9,10 @@ services:
     expose:
       - "8080"  # Internal port 8080 for EasyPanel proxy
     # No external ports - EasyPanel will proxy to internal port 8080
+    networks:
+      default:
+        aliases:
+          - english_appflowy_nginx  # Alias for EasyPanel compatibility
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
