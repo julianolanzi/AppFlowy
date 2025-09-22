@@ -233,14 +233,14 @@ services:
     depends_on:
       - appflowy_cloud
     environment:
-      # Internal URLs for container communication
+      # Server-side URLs (internal)
       - APPFLOWY_BASE_URL=http://appflowy_cloud:8000
       - APPFLOWY_GOTRUE_BASE_URL=http://gotrue:9999
       - APPFLOWY_WS_BASE_URL=ws://appflowy_cloud:8000/ws/v2
-      # External URLs for client-side JavaScript
+      # Client-side URLs (external) - These are injected into the frontend
       - NEXT_PUBLIC_APPFLOWY_BASE_URL=https://english-appflowy.g9awyq.easypanel.host
-      - NEXT_PUBLIC_APPFLOWY_GOTRUE_BASE_URL=https://english-appflowy.g9awyq.easypanel.host/gotrue
-      - NEXT_PUBLIC_APPFLOWY_WS_BASE_URL=wss://english-appflowy.g9awyq.easypanel.host/ws/v2
+      - NEXT_PUBLIC_GOTRUE_URL=https://english-appflowy.g9awyq.easypanel.host/gotrue
+      - NEXT_PUBLIC_WS_URL=wss://english-appflowy.g9awyq.easypanel.host/ws/v2
 volumes:
   postgres_data:
   minio_data:
