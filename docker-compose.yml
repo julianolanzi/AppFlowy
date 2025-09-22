@@ -228,9 +228,10 @@ services:
     depends_on:
       - appflowy_cloud
     environment:
-      - APPFLOWY_BASE_URL=${APPFLOWY_BASE_URL}
-      - APPFLOWY_GOTRUE_BASE_URL=${APPFLOWY_BASE_URL}/gotrue
-      - APPFLOWY_WS_BASE_URL=${APPFLOWY_WEBSOCKET_BASE_URL}
+      # Internal URLs for container communication
+      - APPFLOWY_BASE_URL=http://appflowy_cloud:8000
+      - APPFLOWY_GOTRUE_BASE_URL=http://gotrue:9999
+      - APPFLOWY_WS_BASE_URL=ws://appflowy_cloud:8000/ws/v2
 volumes:
   postgres_data:
   minio_data:
