@@ -1,7 +1,22 @@
 # Essential services for AppFlowy Cloud
-# Optimized for EasyPanel deployment
+# Optimized for EasyPanel deployment with NGINX proxy
 
 services:
+  # NGINX Proxy for routing traffic between services
+  nginx:
+    restart: on-failure
+    image: nginx:alpine
+    ports:
+      - "80:80"  # Main port for EasyPanel to proxy
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - appflowy_cloud
+      - gotrue
+      - admin_frontend
+      - appflowy_web
+      - minio
+
   # You do not need this if you have configured to use your own s3 file storage
   minio:
     restart: on-failure
@@ -99,8 +114,7 @@ services:
 
   appflowy_cloud:
     restart: on-failure
-    ports:
-      - "8000:8000"  # Expose main application port for EasyPanel
+    # Port removed - NGINX will proxy to internal port 8000
     environment:
       - RUST_LOG=${RUST_LOG:-info}
       - APPFLOWY_ENVIRONMENT=production
